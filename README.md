@@ -8,6 +8,9 @@ Albert Li, Matthew Harper, Daniel Tod, and Artyom Martirosyan.
 
 ## Project
 
+A web interface and A data repository where game players can submit and share their games as well as access games others shared.
+
+Implementation description: 
 * A DynamoDB table to store user input
 * A lambda function to 
    * read user input, 
