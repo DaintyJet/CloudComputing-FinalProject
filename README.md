@@ -8,4 +8,24 @@ Albert Li, Matthew Harper, Daniel Tod, and Artyom Martirosyan.
 
 ## Project
 
-Explanation?
+A DynamoDB table to store user input
+A lambda function to 
+ read user input, 
+ write user input to DynamoDB
+ display DynamoDB data to the website
+Cloudformation 
+ create the DynamoDB table
+Launching script
+ create the cloudformation
+ display cloudformation
+ Create lambda execution role
+ create policies to grant lambda function permission to read and write to the database 
+ Attach policies to the role
+ Create deployment package
+ Launch lambda function
+ Generate lambda function url
+ Assign public access to function url
+
+
+
+
