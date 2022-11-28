@@ -36,3 +36,5 @@ class CdkProjectStack(Stack):
         write_scaling.scale_on_utilization(target_utilization_percent=50, scale_in_cooldown=cdk.Duration.seconds(600), scale_out_cooldown=cdk.Duration.seconds(50)) #Scale write
 
         table.grant_full_access(lambdaFunction) # Restrict access later!
+
+        # Would we like to implement alarms? https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/README.html#alarm-metrics
