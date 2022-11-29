@@ -26,15 +26,22 @@ aws iam attach-role-policy --role-name $rolename --policy-arn arn:aws:iam::aws:p
 write-host "create deployment package..."
 Compress-Archive -LiteralPath ./index.js, ./index.html -DestinationPath ./function.zip
 
-Start-Sleep -Seconds 20
+Start-Sleep -Seconds 5
 
 write-host "create lambda function..."
+#aws lambda create-function --function-name $functionname --zip-file fileb://function.zip --handler index.handler --runtime nodejs16.x --role arn:aws:iam::896231038669:role/lambda-ex
 aws lambda create-function --function-name $functionname --zip-file fileb://function.zip --handler index.handler --runtime nodejs16.x --role $roleEnd
-
 write-host "granting permissions to allow public access to function URL..."
 aws lambda add-permission --function-name $functionname --action lambda:InvokeFunctionUrl --principal "*" --function-url-auth-type "NONE" --statement-id url
 
 write-host "generate function URL... "
-aws lambda create-function-url-config --function-name $functionname --auth-type NONE
+aws lambda create-function-url-config --function-name $functionname --auth-type NONE 
 
-#START https://acfuvghim6b4rqago67fwdjqim0vjewn.lambda-url.us-east-1.on.aws/
+write-host "prepare to launch function URL... "
+$string = aws lambda get-function-url-config --function-name $functionname --output text
+
+$URLString = ((Select-String '(http[s]?)(:\/\/)([^\s,]+)' -Input $string ).Matches.Value)
+
+echo $URLString
+
+START $URLString
