@@ -1,3 +1,6 @@
+from os import path
+import aws_cdk as cdk
+from constructs import Construct
 from aws_cdk import (
     # Duration,
     Stack,
@@ -6,21 +9,37 @@ from aws_cdk import (
     aws_dynamodb as db,
     # aws_sqs as sqs,
 )
-import aws_cdk as cdk
 
-from constructs import Construct
 
 class CdkProjectStack(Stack):
 
     def __init__(self, scope: Construct, construct_id: str, **kwargs) -> None:
         super().__init__(scope, construct_id, **kwargs)
 
-        # We first need to create the lambda, this can be instantiated from a local zip file (likely what we will do) or from a s3 bucket.
+        # We first need to create the bucket to store the lambda
+        #lambdaBucket = s3.Bucket(self, "group6-8Bucket")
+
+        # We then need to create the lambda, this can be instantiated from a local zip file (likely what we will do) or from a s3 bucket.
         lambdaFunction = lb.Function(self, "WebInterface_Group6-8", 
                                     runtime=lb.Runtime.NODEJS_16_X, # This runtime can likely be changed!
-                                    handler="index.handler", # Dont know what this is refering to, could be changed to index.js as it could refer to the entrypoint
-                                    code=lb.Code.from_asset("C:\\Users\\matth\\OneDrive\\Documents\\GitHub\\CloudComputing-FinalProject\\packaging") # Temporary hard coded path, change to be dynamic later
+                                    handler="index.js", # Dont know what this is refering to, could be changed to index.js as it could refer to the entrypoint
+                                    code=lb.Code.from_asset(path.join("resources")), # Set to some directory relative to the current one
+                                    #environment=dict(
+                                        #BUCKET=lambdaBucket.bucket_name
+                                       # )
+                                    #insights_version=lb.LambdaInsightsVersion.VERSION_1_0_98_0
                                     ) 
+                                    
+        # Grand read write access of the S3 to the lambda
+        #lambdaBucket.grant_read_write(lambdaFunction)
+
+        # Create the lambda's URL, allow anyone to connect to it
+        lambdaFunctionURL = lambdaFunction.add_function_url(auth_type=lb.FunctionUrlAuthType.NONE)
+        
+        # Output the URL to the output dir
+        cdk.CfnOutput(self, "Game Repository URL",
+                    value=lambdaFunctionURL.url
+        )
         # We will then need to create the dynamo DB database, this will then need to give the lambda read and write access.
         table = db.Table(self,"gamelist", # Name of table
                         partition_key=db.Attribute(name="uid", type=db.AttributeType.STRING) # Create partition key
