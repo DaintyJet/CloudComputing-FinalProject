@@ -5,7 +5,7 @@ const AWS = require("aws-sdk");
 const dynamo = new AWS.DynamoDB.DocumentClient();
 
 var params = {
-      TableName: "gamelist",
+      TableName: process.env.BucketName,//"gamelist",
 //      KeyConditionExpression: "uid = :uid",
 //      ExpressionAttributeValues: {
 //        ":uid": "albert"
@@ -21,7 +21,7 @@ exports.handler = async (event) => {
     console.log (event);
     if(event.queryStringParameters){
         const tablePut = await dynamo.put({
-            TableName: "gamelist",
+            TableName: process.env.BucketName,
             Item: {
               uid: event.queryStringParameters.name,
               game: event.queryStringParameters.game,
@@ -75,7 +75,7 @@ exports.handler = async (event) => {
     return response;
 };
 
-
+// This does not appear to be used -- Matt
 function dynamictable(html,tableQuery){
     let table="<tr>";
         if(tableQuery.Items.length>0){

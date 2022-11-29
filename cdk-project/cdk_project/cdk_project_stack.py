@@ -19,14 +19,31 @@ class CdkProjectStack(Stack):
         # We first need to create the bucket to store the lambda
         #lambdaBucket = s3.Bucket(self, "group6-8Bucket")
 
+       
+        # We will then need to create the dynamo DB database, this will then need to give the lambda read and write access.
+        table = db.Table(self,"gamelist", # Name of table
+                        partition_key=db.Attribute(name="uid", type=db.AttributeType.STRING) # Create partition key
+                        )
+        table.apply_removal_policy(cdk.RemovalPolicy.DESTROY)
+        
+        # Configure Auto Scaling 
+        read_scaling = table.auto_scale_read_capacity(min_capacity=5, max_capacity=20) # Values taken from CF. Sets min and max values 
+        read_scaling.scale_on_utilization(target_utilization_percent=50, scale_in_cooldown=cdk.Duration.seconds(600), scale_out_cooldown=cdk.Duration.seconds(50)) #Scale read 
+        # needed to utilize cdk.Duration method/type to get the scaling parameters to work.
+
+        write_scaling = table.auto_scale_write_capacity(min_capacity=5, max_capacity=20) # values taken from CF. Sets min and max values 
+        write_scaling.scale_on_utilization(target_utilization_percent=50, scale_in_cooldown=cdk.Duration.seconds(600), scale_out_cooldown=cdk.Duration.seconds(50)) #Scale write
+        
+        
         # We then need to create the lambda, this can be instantiated from a local zip file (likely what we will do) or from a s3 bucket.
         lambdaFunction = lb.Function(self, "WebInterface_Group6-8", 
                                     runtime=lb.Runtime.NODEJS_16_X, # This runtime can likely be changed!
-                                    handler="index.js", # Dont know what this is refering to, could be changed to index.js as it could refer to the entrypoint
+                                    handler="index.handler", # Dont know what this is refering to, could be changed to index.js as it could refer to the entrypoint
                                     code=lb.Code.from_asset(path.join("resources")), # Set to some directory relative to the current one
-                                    #environment=dict(
+                                    environment=dict(
+                                        BucketName=table.table_name
                                         #BUCKET=lambdaBucket.bucket_name
-                                       # )
+                                    )
                                     #insights_version=lb.LambdaInsightsVersion.VERSION_1_0_98_0
                                     ) 
                                     
@@ -40,20 +57,9 @@ class CdkProjectStack(Stack):
         cdk.CfnOutput(self, "Game Repository URL",
                     value=lambdaFunctionURL.url
         )
-        # We will then need to create the dynamo DB database, this will then need to give the lambda read and write access.
-        table = db.Table(self,"gamelist", # Name of table
-                        partition_key=db.Attribute(name="uid", type=db.AttributeType.STRING) # Create partition key
-                        
-                        )
-        
-        # Configure Auto Scaling 
-        read_scaling = table.auto_scale_read_capacity(min_capacity=5, max_capacity=20) # Values taken from CF. Sets min and max values 
-        read_scaling.scale_on_utilization(target_utilization_percent=50, scale_in_cooldown=cdk.Duration.seconds(600), scale_out_cooldown=cdk.Duration.seconds(50)) #Scale read 
-        # needed to utilize cdk.Duration method/type to get the scaling parameters to work.
 
-        write_scaling = table.auto_scale_write_capacity(min_capacity=5, max_capacity=20) # values taken from CF. Sets min and max values 
-        write_scaling.scale_on_utilization(target_utilization_percent=50, scale_in_cooldown=cdk.Duration.seconds(600), scale_out_cooldown=cdk.Duration.seconds(50)) #Scale write
+        cdk.CfnOutput(self, "Tablename", value=table.table_name)
 
-        table.grant_full_access(lambdaFunction) # Restrict access later!
+        table.grant_read_write_data(lambdaFunction) # Restrict access later!
 
         # Would we like to implement alarms? https://docs.aws.amazon.com/cdk/api/v2/python/aws_cdk.aws_dynamodb/README.html#alarm-metrics
