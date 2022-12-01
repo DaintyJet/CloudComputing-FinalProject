@@ -100,3 +100,111 @@ This creates cloudwatch alarms so does that count :) (I did not know markdown ma
 ```
 This creates the lambda function it is a NodeJS runtime that will run a index.js file loaded from resources. We provide an environment variable of the bucket name as the name is not guaranteed to be what we specify it, and the JS file needs to refer to it in order to access the DB. Insights provides various cloudwatch metrics that may be useful!
 
+```python
+        # Create the lambda's URL, allow anyone to connect to it
+        lambdaFunctionURL = lambdaFunction.add_function_url(auth_type=lb.FunctionUrlAuthType.NONE)
+```
+
+This creates a URL for the lambda that is publicly accessible, as we want the lambda to host the website in this iteration, if it were serving some other internal service we would limit the access with policy's.
+
+
+```python
+        cdk.CfnOutput(self, "Game Repository URL",
+                    value=lambdaFunctionURL.url
+        )
+```
+
+This outputs the lambda function URL so we are able to access it
+
+```python
+    table.grant_read_write_data(lambdaFunction) 
+```
+This grants read and write access to the lambda.
+
+
+```python
+    lambdaFunctionInvokation = lambdaFunction.metric_invocations(
+                period=cdk.Duration.seconds(30)
+            )
+
+            lambdaFunctionErrors = lambdaFunction.metric_errors(
+                period=cdk.Duration.seconds(10)
+            )
+```
+This creates two metrics that will evaluate every 30, and 10 seconds respectively, they will be used by cloudwatch alarms.
+
+
+```python
+        invocationAlarm = cloudwatch.Alarm(self, "Lambda Invocation Count Alarm", 
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            threshold=5,
+            evaluation_periods=1,
+            alarm_description="This is a simple alarm to notify us of when there are 5 (or more) concurrently executing lambda functions",
+            metric=lambdaFunctionInvokation
+        )
+
+        errorAlarm = cloudwatch.Alarm(self, "Lambda Invocation Error Alarm", 
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            threshold=1,
+            evaluation_periods=1,
+            alarm_description="This is a simple alarm to notify us of when there are 1 (or more) concurrently executing lambda functions with errors",
+            metric=lambdaFunctionErrors
+        )
+```
+
+These are cloudwatch alarms created to trigger once the metric value, evaluated over a certain number of periods (defined by the metric object) goes over a threshold (in our case).
+
+
+
+```python
+ DynamoRead= table.metric_consumed_read_capacity_units(
+            period=cdk.Duration.minutes(1)
+        )
+        # DynamoWrite
+
+        PutMetric = table.metric_throttled_requests_for_operations(
+            operations=[db.Operation.PUT_ITEM],
+            period=cdk.Duration.minutes(1)
+        )
+
+        FailedDynamo = table.metric_conditional_check_failed_requests(
+            period=cdk.Duration.seconds(30)
+        )
+```
+
+This creates so metrics for the dynamoDB instance.
+
+```python 
+        putThrottleAlarm = cloudwatch.Alarm(self, "Dynamo Put Alarm",
+            metric=PutMetric,
+            evaluation_periods=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            threshold=2
+        )
+        failedDynamoAlarm = cloudwatch.Alarm(self, "Dynamo Failed Operation Alarm",
+            metric=FailedDynamo,
+            threshold=1,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            evaluation_periods=1
+        )
+
+        readDynamoAlarm = cloudwatch.Alarm(self, "Dynamo Read Alarm",
+            metric=DynamoRead,
+            threshold=50,
+            comparison_operator=cloudwatch.ComparisonOperator.GREATER_THAN_THRESHOLD,
+            evaluation_periods=10
+        )
+```
+And their respective alarms.
+
+## Running
+
+1. You already have a readme open in the cdk directory, but the files in this should already be copied into, or ready to use the cdk directory structure.
+1. cdk synth
+    * This is to make sure that the cloudformation file will be generated correctly (we never know what can go wrong or change)
+1. cdk deploy
+    * Wait (and say yes to any changes)
+    * access link that was outputted
+1. cdk destroy 
+    * Clean up after yourself!
+  
