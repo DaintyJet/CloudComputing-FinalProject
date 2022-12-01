@@ -25,7 +25,8 @@ exports.handler = async (event) => {
             Item: {
               uid: event.queryStringParameters.name,
               game: event.queryStringParameters.game,
-              link: event.queryStringParameters.link
+              link: event.queryStringParameters.link,
+              entryId: event.queryStringParameters.name + event.queryStringParameters.game + event.queryStringParameters.link
             }
         }).promise();
     }

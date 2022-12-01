@@ -22,7 +22,7 @@ class CdkProjectStack(Stack):
        
         # We will then need to create the dynamo DB database, this will then need to give the lambda read and write access.
         table = db.Table(self,"gamelist", # Name of table
-                        partition_key=db.Attribute(name="uid", type=db.AttributeType.STRING) # Create partition key
+                        partition_key=db.Attribute(name="entryId", type=db.AttributeType.STRING) # Create partition key
                         )
         table.apply_removal_policy(cdk.RemovalPolicy.DESTROY)
         
@@ -43,8 +43,8 @@ class CdkProjectStack(Stack):
                                     environment=dict(
                                         BucketName=table.table_name
                                         #BUCKET=lambdaBucket.bucket_name
-                                    )
-                                    #insights_version=lb.LambdaInsightsVersion.VERSION_1_0_98_0
+                                    ),
+                                    insights_version=lb.LambdaInsightsVersion.VERSION_1_0_98_0
                                     ) 
                                     
         # Grand read write access of the S3 to the lambda
