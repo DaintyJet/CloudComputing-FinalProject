@@ -28,6 +28,12 @@ Implementation description:
    * Launch lambda function
    * Generate lambda function url
    * Assign public access to function url
+ * Cleaning script
+   * Delete the cloudformation stack
+   * Detach policy from the role
+   * Remove lambda role
+   * Delete deployment package
+   * Delete lambda function
 
 
 
